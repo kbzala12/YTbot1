@@ -1,29 +1,25 @@
-bot.send_message(message.chat.id, f"""👋 स्वागत है {message.from_user.first_name}!
-
-✨ मैं हूं *Poet Kambo* का ऑफिशियल रिवॉर्ड बॉट।
-
-🔸 यहाँ आप पॉइंट्स कमा सकते हैं:
-🎥 वीडियो देख कर – 10 पॉइंट्स  
-📤 बॉट को शेयर कर के – 25 पॉइंट्स  
-👥 दोस्तों को रेफर कर के – 50 पॉइंट्स  
-🎯 1000 पॉइंट्स पर आप अपना प्रमोशन लिंक भेज सकते हैं!
-
-📺 *YouTube Channel* – जरूर सब्सक्राइब करें:
-👉 [Poet Kambo YouTube](https://youtube.com/@kishorsinhzala.?si=uKMVwnB7w5RfvSgrOH8LRkCYmY)
-
-💬 हमारे Telegram ग्रुप से जुड़ें: {TELEGRAM_GROUP}
-
-🔽 नीचे से ऑप्शन चुनें और शुरू करें ⬇️
-""", parse_mode="Markdown", reply_markup=main_menu())
 import telebot, sqlite3
 from flask import Flask
 from threading import Thread
 
 # ========== CONFIG ==========
-BOT_TOKEN = "YOUR_BOT_TOKEN"
+BOT_TOKEN = "8192810260:AAFfhjDfNywZIzkrlVmtAuKFL5_E-ZnsOmU"  # यहां अपना बॉट टोकन डालें
 ADMIN_ID = 7459795138
-YOUTUBE_CHANNEL = "https://youtube.com/@kishorsinhzala.?si=uKMVwnB7w5RfvSgrOH8LRkCYmY"
-TELEGRAM_GROUP = "@boomupbot10"
+YOUTUBE_CHANNEL = "https://youtube.com/@kishorsinhzala.?si=L3MaMmn51a-ZyV_y"
+TELEGRAM_GROUP = "FreesubscribeYouTube2k"
+
+VIDEO_LIBRARY = [
+    {"url": "https://youtu.be/G2YCGapVbEc?si=OOfd-eH3a75Dsi9S", "code": "BOOST1"},
+    {"url": "https://youtube.com/shorts/KP7TXFpTCeI?si=xRVrDsy53OnCwDcN", "code": "BOOM2"},
+    {"url": "https://youtube.com/shorts/dVUy6aWYgHI?si=-ffnsKllf4Kl-BMM", "code": "REACH3"},
+    {"url": "https://youtu.be/SWMtSEvaiFU", "code": "ZALA4"},
+    {"url": "https://youtu.be/VID5", "code": "XTRA5"},
+    {"url": "https://youtu.be/VID6", "code": "BOOM6"},
+    {"url": "https://youtu.be/VID7", "code": "KISHOR7"},
+    {"url": "https://youtu.be/VID8", "code": "TREND8"},
+    {"url": "https://youtu.be/VID9", "code": "ROCKET9"},
+    {"url": "https://youtu.be/VID10", "code": "BOOMUP10"}
+]
 
 # ========== KEEP ALIVE ==========
 app = Flask('')
@@ -83,7 +79,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 def is_user_in_channel(user_id):
     try:
-        member = bot.get_chat_member(TELEGRAM_GROUP, user_id)
+        member = bot.get_chat_member(f"@{TELEGRAM_GROUP}", user_id)
         return member.status in ["member", "administrator", "creator"]
     except Exception as e:
         print(f"Error: {e}")
@@ -102,7 +98,7 @@ def start(message):
 
     if not is_user_in_channel(user_id):
         join_btn = telebot.types.InlineKeyboardMarkup()
-        join_btn.add(telebot.types.InlineKeyboardButton("📥 ग्रुप जॉइन करें", url=f"https://t.me/{TELEGRAM_GROUP.replace('@', '')}"))
+        join_btn.add(telebot.types.InlineKeyboardButton("📥 ग्रुप जॉइन करें", url=f"https://t.me/{TELEGRAM_GROUP}"))
         bot.send_message(message.chat.id, "🚫 पहले हमारे Telegram Group को जॉइन करें:", reply_markup=join_btn)
         return
 
@@ -125,7 +121,8 @@ def start(message):
 📺 *YouTube Channel* – जरूर सब्सक्राइब करें:
 👉 {YOUTUBE_CHANNEL}
 
-💬 हमारे Telegram ग्रुप से जुड़ें: {TELEGRAM_GROUP}
+💬 हमारे Telegram ग्रुप से जुड़ें:
+👉 https://t.me/{TELEGRAM_GROUP}
 
 🔽 नीचे से ऑप्शन चुनें और शुरू करें ⬇️""",
         parse_mode="Markdown",
@@ -139,6 +136,11 @@ def handle_all(message):
     text = message.text
 
     if text == "🎥 वीडियो देखा":
+        video_text = "🎬 *वीडियो लिस्ट* - किसी भी वीडियो को देखें और नीचे दिए गए कोड से VERIFY करें:\n\n"
+        for v in VIDEO_LIBRARY:
+            video_text += f"🔗 {v['url']}\n🆔 कोड: `{v['code']}`\n\n"
+        bot.send_message(message.chat.id, video_text, parse_mode="Markdown")
+
         if add_points(user_id, "videos", 10, 1, 10):
             bot.reply_to(message, "✅ आपने 1 वीडियो देखा, +10 पॉइंट्स!")
         else:
@@ -189,119 +191,6 @@ def handle_callback(call):
     elif action == "reject":
         bot.send_message(user_id, "❌ आपका प्रमोशन लिंक reject कर दिया गया है.")
     bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
-
-print("🤖 Bot is running...")
-bot.infinity_polling()
-import telebot, sqlite3, os
-from flask import Flask
-from threading import Thread
-
-BOT_TOKEN = "YOUR_BOT_TOKEN"
-TELEGRAM_GROUP = "@yourgroup"
-ADMIN_ID = 123456789
-
-VIDEO_LIBRARY = [
-    {"url": "https://youtu.be/abc1", "code": "BOOST1"},
-    {"url": "https://youtu.be/abc2", "code": "BOOM2"},
-    {"url": "https://youtu.be/abc3", "code": "REACH3"}
-]
-
-# Flask for Replit Keep Alive
-app = Flask('')
-@app.route('/')
-def home(): return "Bot is running"
-def run(): app.run(host='0.0.0.0', port=8080)
-def keep_alive(): Thread(target=run).start()
-keep_alive()
-
-# Database Setup
-conn = sqlite3.connect("bot.db", check_same_thread=False)
-cursor = conn.cursor()
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS users (
-    id TEXT PRIMARY KEY,
-    points INTEGER DEFAULT 0,
-    videos INTEGER DEFAULT 0,
-    claimed_codes TEXT
-)
-""")
-conn.commit()
-
-def check_user(user_id):
-    cursor.execute("SELECT id FROM users WHERE id = ?", (user_id,))
-    if not cursor.fetchone():
-        cursor.execute("INSERT INTO users (id, claimed_codes) VALUES (?, ?)", (user_id, ""))
-        conn.commit()
-
-def get_user(user_id):
-    cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
-    row = cursor.fetchone()
-    return {"id": row[0], "points": row[1], "videos": row[2], "claimed_codes": row[3]} if row else None
-
-bot = telebot.TeleBot(BOT_TOKEN)
-
-@bot.message_handler(commands=["start"])
-def start(msg):
-    user_id = str(msg.from_user.id)
-    check_user(user_id)
-    bot.send_message(msg.chat.id, "🎉 Welcome! वीडियो देखें और कोड डालें पॉइंट्स पाने के लिए।", reply_markup=main_menu())
-
-def main_menu():
-    menu = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-    menu.row("🎥 वीडियो देखा", "📊 मेरी जानकारी")
-    return menu
-
-@bot.message_handler(func=lambda msg: msg.text == "📊 मेरी जानकारी")
-def user_info(msg):
-    user_id = str(msg.from_user.id)
-    check_user(user_id)
-    u = get_user(user_id)
-
-    watched = u['videos']
-    total = len(VIDEO_LIBRARY)
-    progress = ""
-    for i in range(total):
-        if VIDEO_LIBRARY[i]["code"] in u['claimed_codes'].split(","):
-            progress += f"✅ {i+1} "
-        else:
-            progress += f"❌ {i+1} "
-
-    bot.reply_to(msg, f"""📊 आपकी जानकारी:
-🔢 Total Points: {u['points']}
-🎬 Videos Seen: {watched}/{total}
-🎯 Progress: {progress}""")
-
-@bot.message_handler(func=lambda msg: msg.text == "🎥 वीडियो देखा")
-def send_all_videos(msg):
-    text = "📺 सभी वीडियो देखें और कोड टाइप करें:\n\n"
-    for i, video in enumerate(VIDEO_LIBRARY):
-        text += f"🎬 Video {i + 1}: {video['url']}\n📌 Code: (वीडियो में मिलेगा)\n\n"
-    bot.send_message(msg.chat.id, text)
-
-@bot.message_handler(func=lambda msg: msg.text and not msg.text.startswith("/"))
-def code_check(msg):
-    user_id = str(msg.from_user.id)
-    code = msg.text.strip().upper()
-    check_user(user_id)
-    user = get_user(user_id)
-    claimed = user["claimed_codes"].split(",") if user["claimed_codes"] else []
-
-    for index, video in enumerate(VIDEO_LIBRARY):
-        if code == video["code"]:
-            if code in claimed:
-                bot.reply_to(msg, "⚠️ आपने पहले ही इस कोड का उपयोग किया है।")
-                return
-
-            claimed.append(code)
-            new_claimed = ",".join(claimed)
-            cursor.execute("UPDATE users SET claimed_codes = ?, videos = videos + 1, points = points + 10 WHERE id = ?",
-                           (new_claimed, user_id))
-            conn.commit()
-
-            bot.reply_to(msg, f"✅ सही कोड! वीडियो #{index + 1} के लिए +10 पॉइंट्स मिल गए।")
-            return
-
-    bot.reply_to(msg, "❌ गलत कोड! कृपया वीडियो देखकर सही कोड टाइप करें।")
 
 print("🤖 Bot is running...")
 bot.infinity_polling()
