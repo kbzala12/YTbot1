@@ -1,7 +1,7 @@
 import telebot
 from keep_alive import keep_alive
 
-BOT_TOKEN = "7978191312:AAFyWVkBruuR42HTuTd_sQxFaKHBrre0VWw"
+BOT_TOKEN = "8418715308:AAFApWpbwdBzpaemol41ptWzudI-YdM2tIg"
 ADMIN_ID = 7459795138
 
 bot = telebot.TeleBot(BOT_TOKEN)
