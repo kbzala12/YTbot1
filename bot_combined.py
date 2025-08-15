@@ -1,19 +1,31 @@
-import telebot
-from keep_alive import keep_alive
+import threading
+from flask import Flask
+from telegram.ext import Updater, CommandHandler
 
-BOT_TOKEN = "8418715308:AAFApWpbwdBzpaemol41ptWzudI-YdM2tIg"
+TOKEN = "7978191312:AAFyWVkBruuR42HTuTd_sQxFaKHBrre0VWw"
 ADMIN_ID = 7459795138
 
-bot = telebot.TeleBot(BOT_TOKEN)
+# Flask web server
+app = Flask(__name__)
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    bot.reply_to(message, "👋 नमस्ते! आपका Telegram बॉट Render पर चल रहा है ✅")
+@app.route('/')
+def home():
+    return "Bot is running!"
 
-@bot.message_handler(func=lambda m: True)
-def echo_all(message):
-    bot.reply_to(message, f"आपने कहा: {message.text}")
+def run_flask():
+    app.run(host="0.0.0.0", port=10000)
 
-keep_alive()
+# Telegram bot
+def start(update, context):
+    update.message.reply_text("👋 नमस्ते! बॉट चालू है।")
 
-bot.polling(non_stop=True)
+def run_telegram():
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
+    dp.add_handler(CommandHandler("start", start))
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == "__main__":
+    threading.Thread(target=run_flask).start()
+    run_telegram()
