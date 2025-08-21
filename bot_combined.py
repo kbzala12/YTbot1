@@ -1,85 +1,176 @@
 import logging
+import sqlite3
+import random
+import string
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-# 🔑 Config
+# ================= CONFIG =================
 BOT_TOKEN = "7978191312:AAFyWVkBruuR42HTuTd_sQxFaKHBrre0VWw"
 ADMIN_ID = 7459795138
-REQUIRED_CHANNEL = "boomupbot10"   # आपका group/channel username (बिना @ के)
-WEBAPP_URL = "https://studiokbyt.onrender.com"
+WEB_APP_URL = "https://studiokbyt.onrender.com"
+GROUP_ID = "@boomupbot10"  # आपका ग्रुप username
+BOT_USERNAME = "Bingyt_bot"  # अपने Bot का username डालें
 
-# लॉगिंग
+# ================= LOGGING =================
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
 )
 
-# /start command
+# ================= DATABASE =================
+def init_db():
+    conn = sqlite3.connect("bot.db")
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        points INTEGER DEFAULT 0,
+        videos INTEGER DEFAULT 0,
+        shares INTEGER DEFAULT 0,
+        ref INTEGER DEFAULT 0,
+        referred_by TEXT
+    )''')
+    conn.commit()
+    conn.close()
+
+def add_user(telegram_id, referred_by=None):
+    conn = sqlite3.connect("bot.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE id=?", (str(telegram_id),))
+    user = cursor.fetchone()
+
+    if not user:
+        cursor.execute(
+            "INSERT INTO users (id, points, videos, shares, ref, referred_by) VALUES (?, ?, ?, ?, ?, ?)",
+            (str(telegram_id), 0, 0, 0, 0, referred_by)
+        )
+
+        # अगर किसी ने refer किया है तो बोनस दो
+        if referred_by:
+            cursor.execute("SELECT * FROM users WHERE id=?", (str(referred_by),))
+            ref_user = cursor.fetchone()
+            if ref_user:
+                cursor.execute("UPDATE users SET points = points + 100, ref = ref + 1 WHERE id=?", (str(referred_by),))
+
+    conn.commit()
+    conn.close()
+
+def get_user(telegram_id):
+    conn = sqlite3.connect("bot.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE id=?", (str(telegram_id),))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
+# ================= HANDLERS =================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    chat_id = update.effective_chat.id
+    referral_code = None
 
-    try:
-        member = await context.bot.get_chat_member("@" + REQUIRED_CHANNEL, user.id)
+    # अगर /start refID दिया गया है तो पकड़ो
+    if context.args:
+        referral_code = context.args[0]
 
-        if member.status in ["member", "administrator", "creator"]:
-            # ✅ User already joined
-            keyboard = [[InlineKeyboardButton("🌐 WebApp खोलें", web_app=WebAppInfo(url=WEBAPP_URL))]]
-            await update.message.reply_text(
-                "✅ आपने Join कर लिया है!\nअब WebApp खोलें 👇",
-                reply_markup=InlineKeyboardMarkup(keyboard)
-            )
-        else:
-            # ❌ Not joined
-            keyboard = [[InlineKeyboardButton("✅ मैंने Join कर लिया", callback_data="check_join")]]
-            await update.message.reply_text(
-                f"🚨 पहले हमारे ग्रुप को Join करें:\n👉 https://t.me/{REQUIRED_CHANNEL}",
-                reply_markup=InlineKeyboardMarkup(keyboard)
-            )
+    add_user(user.id, referral_code)
 
-    except Exception as e:
-        keyboard = [[InlineKeyboardButton("✅ मैंने Join कर लिया", callback_data="check_join")]]
-        await update.message.reply_text(
-            f"⚠️ पहले हमारे ग्रुप को Join करें:\n👉 https://t.me/{REQUIRED_CHANNEL}",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
+    welcome_message = f"""
+🎬 *Video Coin Earner Bot में आपका स्वागत है!* 🎬
 
-# Callback: ✅ मैंने Join कर लिया
-async def check_join(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user = query.from_user
+नमस्ते {user.first_name}! 
 
-    member = await context.bot.get_chat_member("@" + REQUIRED_CHANNEL, user.id)
+📹 *वीडियो देखें और कॉइन कमाएं:*
+• प्रत्येक वीडियो = 30 पॉइंट्स  
+• दैनिक लिमिट = 10 वीडियो  
 
-    if member.status in ["member", "administrator", "creator"]:
-        keyboard = [[InlineKeyboardButton("🌐 WebApp खोलें", web_app=WebAppInfo(url=WEBAPP_URL))]]
-        await query.message.reply_text(
-            "✅ Verification Successful!\nअब WebApp खोलें 👇",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-    else:
-        await query.message.reply_text(
-            f"❌ आपने अभी तक Join नहीं किया!\n👉 पहले यहाँ Join करें: https://t.me/{REQUIRED_CHANNEL}"
-        )
+👥 *रेफरल सिस्टम:*  
+• दोस्तों को इनवाइट करें  
+• हर नए यूज़र पर 100 पॉइंट्स  
 
-    await query.answer()
+📤 *शेयर सिस्टम:*  
+• शेयर करने पर 25 पॉइंट्स  
+• लिमिट = 5 शेयर / दिन  
 
-# सिर्फ Admin के लिए command
-async def admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id == ADMIN_ID:
-        await update.message.reply_text("👑 Admin Panel में आपका स्वागत है!")
-    else:
-        await update.message.reply_text("❌ केवल Admin इस command का उपयोग कर सकते हैं।")
+⚠️ *महत्वपूर्ण:* बॉट यूज़ करने के लिए पहले ग्रुप जॉइन करना ज़रूरी है।  
 
-# 🚀 Run Bot
+आपका ID: `{user.id}`
+"""
+
+    keyboard = [
+        [
+            InlineKeyboardButton("🚀 ऐप लॉन्च करें", web_app=WebAppInfo(url=WEB_APP_URL)),
+            InlineKeyboardButton("👥 ग्रुप जॉइन करें", url=f"https://t.me/{GROUP_ID.replace('@', '')}")
+        ]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(welcome_message, parse_mode='Markdown', reply_markup=reply_markup)
+
+async def wallet(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = get_user(update.effective_user.id)
+    if not user:
+        await update.message.reply_text("कृपया पहले /start करें।")
+        return
+
+    wallet_message = f"""
+💰 *आपका वॉलेट*
+
+🪙 पॉइंट्स: {user[1]}  
+📹 वीडियो देखे: {user[2]}/10  
+📤 शेयर: {user[3]}/5  
+👥 सफल रेफरल्स: {user[4]}  
+
+🔄 स्टेटस: {'✅ लिमिट पूरी' if user[2] >= 10 else '🟡 अभी और कमा सकते हैं'}
+"""
+    await update.message.reply_text(wallet_message, parse_mode="Markdown")
+
+async def referral(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = get_user(update.effective_user.id)
+    if not user:
+        await update.message.reply_text("कृपया पहले /start करें।")
+        return
+
+    referral_link = f"https://t.me/{BOT_USERNAME}?start={update.effective_user.id}"
+
+    message = f"""
+👥 *Invite & Earn System*  
+
+🔗 आपका लिंक:  
+{referral_link}  
+
+📊 स्टेट्स:  
+• कुल रेफरल्स: {user[4]}  
+• कमाई: {user[4] * 100} पॉइंट्स  
+
+💡 अपने दोस्तों को यह लिंक भेजें।  
+"""
+    keyboard = [[InlineKeyboardButton("📤 शेयर करें", switch_inline_query=referral_link)]]
+    await update.message.reply_text(message, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    msg = """
+🎬 *Bot Commands*
+
+/start - शुरू करें  
+/wallet - वॉलेट देखें  
+/referral - रेफरल लिंक  
+/help - मदद  
+
+👉 वीडियो देखें, रेफरल करें और पॉइंट्स कमाएं।
+"""
+    await update.message.reply_text(msg, parse_mode="Markdown")
+
+# ================= MAIN =================
 def main():
+    init_db()
     app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("admin", admin))
-    app.add_handler(CallbackQueryHandler(check_join, pattern="check_join"))
+    app.add_handler(CommandHandler("wallet", wallet))
+    app.add_handler(CommandHandler("referral", referral))
+    app.add_handler(CommandHandler("help", help_command))
 
-    print("🤖 Bot Started...")
+    print("🤖 Bot with Invite System is running...")
     app.run_polling()
 
 if __name__ == "__main__":
